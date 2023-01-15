@@ -52,14 +52,14 @@ with mp_hands.Hands(
 
     image.flags.writeable = True
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
     if results.multi_hand_landmarks:
       image, ((x1,y1), (x2,y2)) = drawBoundingBoxes(image, results, padd_amount=40)
-      cv2.imshow("asl", image)
-
       if fc % 10 == 0:
-        image = image[y1:y2, x1:x2]
-        cv2.imwrite(f'./img/{fc}.jpg', image)
+        img_crop = image[y1:y2, x1:x2]
+        cv2.imwrite(f'./img/{fc}.jpg', img_crop)
 
+    cv2.imshow("asl", image)
     fc += 1
     if cv2.waitKey(1) & 0xFF == ord('q'):
       break
