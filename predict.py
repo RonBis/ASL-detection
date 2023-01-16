@@ -57,7 +57,10 @@ with mp_hands.Hands(
       image, ((x1,y1), (x2,y2)) = drawBoundingBoxes(image, results, padd_amount=40)
       if fc % 10 == 0:
         img_crop = image[y1:y2, x1:x2]
-        cv2.imwrite(f'./img/{fc}.jpg', img_crop)
+        try:
+          cv2.imwrite(f'./img/{fc}.jpg', img_crop)
+        except:
+          print("Cannot save empty frame")
 
     cv2.imshow("asl", image)
     fc += 1
