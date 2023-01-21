@@ -14,14 +14,14 @@ import mediapipe as mp
 from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
-
+import keyboard
 
 def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--device", type=int, default=0)
-    parser.add_argument("--width", help='cap width', type=int, default=960)
-    parser.add_argument("--height", help='cap height', type=int, default=540)
+    parser.add_argument("--width", help='cap width', type=int, default=1920)
+    parser.add_argument("--height", help='cap height', type=int, default=1080)
 
     parser.add_argument('--use_static_image_mode', action='store_true')
     parser.add_argument("--min_detection_confidence",
@@ -42,6 +42,8 @@ def main():
     # Argument parsing #################################################################
     args = get_args()
     #user defined variable
+    sentance = " "
+
 
     cap_device = args.device
     cap_width = args.width
@@ -100,7 +102,6 @@ def main():
     mode = 0
 
     while True:
-        timer = 0
         fps = cvFpsCalc.get()
 
         # Process Key (ESC: end) #################################################
@@ -171,22 +172,23 @@ def main():
                     point_history_classifier_labels[most_common_fg_id[0][0]],
                 )
                 sign = keypoint_classifier_labels[hand_sign_id]
-
-                if sign == "SPACE":
-                    sign = " "
-                with open("./gen/int.csv") as f:
-                    f.write(sign)
                 #print(keypoint_classifier_labels[hand_sign_id])
-                if sentance[-1] != keypoint_classifier_labels[hand_sign_id]:
+                # if sentance[-1] != keypoint_classifier_labels[hand_sign_id]:
+                #     if sign == "SPACE":
+                #         sign = " "
+                if keyboard.is_pressed('q'):
+                    if sign == "SPACE":
+                        sign = " "
                     sentance = sentance+sign
                     print(sentance)
-                time.sleep(0.55)
+                    with open('./gen/file.txt','w') as f:
+                        f.write(sentance)
+                time.sleep(0.01)
         else:
             point_history.append([0, 0])
 
         debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
-
 
         # Screen reflection #############################################################
         cv.imshow('Hand Gesture Recognition', debug_image)
