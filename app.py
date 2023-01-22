@@ -4,7 +4,7 @@ import csv
 import copy
 import argparse
 import itertools
-from collections import Counter
+# from collections import Counter
 from collections import deque
 import time
 import cv2 as cv
@@ -15,6 +15,7 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 import keyboard
+import websocket
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -41,9 +42,17 @@ def get_args():
 def main():
     # Argument parsing #################################################################
     args = get_args()
+    #connect with frontend ws server
+    ws = websocket.WebSocket()
+
+    try:
+        ws.connect("ws://localhost:4444")
+        ws.send("hello")
+    except:
+        print("Cannot connect to frontend ws.")
+
     #user defined variable
     sentance = " "
-
 
     cap_device = args.device
     cap_width = args.width
@@ -74,14 +83,14 @@ def main():
     point_history_classifier = PointHistoryClassifier()
 
     # Read labels ###########################################################
-    with open('model/keypoint_classifier/keypoint_classifier_label.csv',
-              encoding='utf-8-sig') as f:
+    with open('./model/keypoint_classifier/keypoint_classifier_label.csv',
+            encoding='utf-8-sig') as f:
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
         ]
     with open(
-            'model/point_history_classifier/point_history_classifier_label.csv',
+            './model/point_history_classifier/point_history_classifier_label.csv',
             encoding='utf-8-sig') as f:
         point_history_classifier_labels = csv.reader(f)
         point_history_classifier_labels = [
@@ -107,6 +116,7 @@ def main():
         # Process Key (ESC: end) #################################################
         key = cv.waitKey(10)
         if key == 27:  # ESC
+            ws.close()
             break
         number, mode = select_mode(key, mode)
 
@@ -127,7 +137,7 @@ def main():
         #  ####################################################################
         if results.multi_hand_landmarks is not None:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
-                                                  results.multi_handedness):
+                                                results.multi_handedness):
                 # Bounding box calculation
                 brect = calc_bounding_rect(debug_image, hand_landmarks)
                 # Landmark calculation
@@ -158,8 +168,8 @@ def main():
 
                 # Calculates the gesture IDs in the latest detection
                 finger_gesture_history.append(finger_gesture_id)
-                most_common_fg_id = Counter(
-                    finger_gesture_history).most_common()
+                # most_common_fg_id = Counter(
+                #     finger_gesture_history).most_common()
 
                 # Drawing part
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
@@ -169,7 +179,8 @@ def main():
                     brect,
                     handedness,
                     keypoint_classifier_labels[hand_sign_id],
-                    point_history_classifier_labels[most_common_fg_id[0][0]],
+                    # finger_gesture_text=point_history_classifier_labels[most_common_fg_id[0][0]],
+                    finger_gesture_text=""
                 )
                 sign = keypoint_classifier_labels[hand_sign_id]
                 #print(keypoint_classifier_labels[hand_sign_id])
@@ -180,14 +191,18 @@ def main():
                     if sign == "SPACE":
                         sign = " "
                     sentance = sentance+sign
-                    print(sentance)
-                    with open('./gen/file.txt','w') as f:
-                        f.write(sentance)
+
+                    try:
+                        ws.send(sentance)
+                    except:
+                        with open('./gen/file.txt','w') as f:
+                            f.write(sentance)
+
                 time.sleep(0.01)
         else:
             point_history.append([0, 0])
 
-        debug_image = draw_point_history(debug_image, point_history)
+        # debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
 
         # Screen reflection #############################################################
@@ -412,87 +427,87 @@ def draw_landmarks(image, landmark_point):
     for index, landmark in enumerate(landmark_point):
         if index == 0:  # 手首1
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 1:  # 手首2
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 2:  # 親指：付け根
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 3:  # 親指：第1関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 4:  # 親指：指先
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
         if index == 5:  # 人差指：付け根
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 6:  # 人差指：第2関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 7:  # 人差指：第1関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 8:  # 人差指：指先
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
         if index == 9:  # 中指：付け根
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 10:  # 中指：第2関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 11:  # 中指：第1関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 12:  # 中指：指先
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
         if index == 13:  # 薬指：付け根
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 14:  # 薬指：第2関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 15:  # 薬指：第1関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 16:  # 薬指：指先
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
         if index == 17:  # 小指：付け根
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 18:  # 小指：第2関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 19:  # 小指：第1関節
             cv.circle(image, (landmark[0], landmark[1]), 5, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 5, (0, 0, 0), 1)
         if index == 20:  # 小指：指先
             cv.circle(image, (landmark[0], landmark[1]), 8, (255, 255, 255),
-                      -1)
+                    -1)
             cv.circle(image, (landmark[0], landmark[1]), 8, (0, 0, 0), 1)
 
     return image
@@ -502,28 +517,28 @@ def draw_bounding_rect(use_brect, image, brect):
     if use_brect:
         # Outer rectangle
         cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
-                     (0, 0, 0), 1)
+                    (0, 0, 0), 1)
 
     return image
 
 
 def draw_info_text(image, brect, handedness, hand_sign_text,
-                   finger_gesture_text):
+                finger_gesture_text):
     cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22),
-                 (0, 0, 0), -1)
+                (0, 0, 0), -1)
 
     info_text = handedness.classification[0].label[0:]
     if hand_sign_text != "":
         info_text = info_text + ':' + hand_sign_text
     cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
-               cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
+            cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
 
     if finger_gesture_text != "":
         cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
-                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
+                cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
         cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
-                   cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
-                   cv.LINE_AA)
+                cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
+                cv.LINE_AA)
 
     return image
 
@@ -532,26 +547,26 @@ def draw_point_history(image, point_history):
     for index, point in enumerate(point_history):
         if point[0] != 0 and point[1] != 0:
             cv.circle(image, (point[0], point[1]), 1 + int(index / 2),
-                      (152, 251, 152), 2)
+                    (152, 251, 152), 2)
 
     return image
 
 
 def draw_info(image, fps, mode, number):
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
-               1.0, (0, 0, 0), 4, cv.LINE_AA)
+            1.0, (0, 0, 0), 4, cv.LINE_AA)
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
-               1.0, (255, 255, 255), 2, cv.LINE_AA)
+            1.0, (255, 255, 255), 2, cv.LINE_AA)
 
     mode_string = ['Logging Key Point', 'Logging Point History']
     if 1 <= mode <= 2:
         cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
-                   cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
-                   cv.LINE_AA)
+                cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                cv.LINE_AA)
         if 0 <= number <= 9:
             cv.putText(image, "NUM:" + str(number), (10, 110),
-                       cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
-                       cv.LINE_AA)
+                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                    cv.LINE_AA)
     return image
 
 

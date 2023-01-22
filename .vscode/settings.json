@@ -3,7 +3,6 @@
     ".git": true,
     ".gitignore": true,
     "app_temp.py": true,
-    "env": true,
     "LICENSE": true,
     "__pycache__": true,
     ".vscode": true

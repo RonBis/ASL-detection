@@ -28,19 +28,19 @@ class MainWindow(QMainWindow):
         self.font.setPointSize(12)
 
         self.font2 = QFont()
-        self.font2.setFamily("Segoe UI Bold")
+        self.font2.setFamily("Segoe UI SemiBold")
         self.font2.setPointSize(16)
 
         self.textarea = QTextEdit(self)
 
-        self.textarea.setReadOnly(True) #make readonly
+        self.textarea.setReadOnly(False) #make readonly
         self.textarea.setGeometry(120, 30, 961, 641)
         self.textarea.setFont(self.font2)
 
         self.textarea.setStyleSheet("QTextEdit"
                                     "{"
-                                    "background-color: rgb(48,51,51); "
-                                    "color: white"
+                                    "background-color: rgb(245,245,245); "
+                                    "color: black"
                                     "}")
         with open('./gen/file.txt', 'r') as f:
             text = f.readline()
@@ -108,6 +108,8 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    with open('./gen/file.txt','w') as f:
+        f.write('')
     # proc = subprocess.Popen(['D:\Code\SDK\Python\Python310\python.exe', 'app.py'], stdout=subprocess.PIPE)
     app.main()
     appi = QApplication(sys.argv)
